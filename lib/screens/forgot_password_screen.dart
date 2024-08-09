@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:stylish_app/screens/get_started_screen.dart';
-
+import 'package:http/http.dart'as http;
+import 'package:stylish_app/screens/reset_password_screen.dart';
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -11,6 +14,68 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController =TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  Future<void> _resetPassword(String email)async{
+    setState(() {
+      _isLoading = true;
+    });
+    final Url = 'https://a530-117-221-190-217.ngrok-free.app/forgetpassword';
+    try{
+      final response = await http.post(
+        Uri.parse(Url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': _emailController.text}),
+      );
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordScreen(
+                email: _emailController.text,
+                 id :responseData['data']['id'] ),
+          ),
+        );
+      } else {
+        // Handle error
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Error'),
+            content: Text(responseData['message']),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text('An error occurred. Please try again.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,6 +93,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
             const SizedBox(height: 50,),
             Form(
+              key: _formKey,
                 child: Container(
                   color: Colors.grey[200],
                   child: TextFormField(
@@ -66,19 +132,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ],
             ),
          const SizedBox(height: 50,),
-         ElevatedButton(
+        _isLoading
+            ? Center(child: CircularProgressIndicator(),)
+            : ElevatedButton(
            style: ButtonStyle(
-             shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(13))),
+             shape: WidgetStatePropertyAll(
+                 RoundedRectangleBorder(
+                     borderRadius: BorderRadius.circular(13))),
              fixedSize: WidgetStatePropertyAll(Size(MediaQuery.of(context).size.width, 50)),
          backgroundColor: WidgetStatePropertyAll(Colors.red[400])
            ),
              onPressed: () {
              if(_formKey.currentState!.validate()){
-         Navigator.push(context, MaterialPageRoute(builder: (context) => const GetStartedScreen(),));
+               _resetPassword(_emailController.text);
              }
              },
              child: const Text('submit',
-         style: TextStyle(color: Colors.white, fontFamily: 'Montserrat',
+         style: TextStyle(
+             color: Colors.white,
+             fontFamily: 'Montserrat',
          fontSize: 20),))
           ],
         ),

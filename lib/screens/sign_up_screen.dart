@@ -22,7 +22,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _auth = AuthService();
 
   Future<void> registerUser() async {
-    var  url = Uri.parse('https://41d8-117-223-87-162.ngrok-free.app/register');
+    var  url = Uri.parse('https://dec8-117-221-190-133.ngrok-free.app/register');
     try {
       var  response = await http.post(
         url,
@@ -54,7 +54,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (response.statusCode == 200) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const GetStartedScreen()),
+          MaterialPageRoute(builder: (context) => SignInScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -179,7 +179,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                  }
                                }
                                 return null;
-                              }, ObscureText: !_passwordVisibility),
+                              },
+                              ObscureText: !_passwordVisibility),
                           const SizedBox(height: 10,),
                           const Row(
                             children: [

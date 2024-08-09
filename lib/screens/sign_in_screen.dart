@@ -22,7 +22,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final _auth = AuthService();
 
   Future<void>loginUser()async{
-    var url = Uri.parse('https://41d8-117-223-87-162.ngrok-free.app/login');
+    var url = Uri.parse('https://dec8-117-221-190-133.ngrok-free.app/login');
     try{
       var response = await http.post(
         url,

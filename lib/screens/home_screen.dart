@@ -1,8 +1,13 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:stylish_app/model/productoffer_model.dart';
 import 'package:stylish_app/services/api_service.dart';
+
+import '../model/productoffer_ads_model.dart';
+import '../model/trendingproduct_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,91 +18,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final _pageController = PageController(viewportFraction: 1, keepPage: true);
+  final CarouselController  _trendCarouselController = CarouselController();
   final _formKey = GlobalKey<FormState>();
   final CarouselController _carouselController = CarouselController();
   late Future<List<ProductOfferModel>> _futureOffer;
+  late Future<List<ProductOfferAds>>_futureOfferAds;
+  late Future<List<TrendingProductModel>>_futureTrendingProduct;
+
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     _futureOffer = fetchProductOffers();
-
+    _futureOfferAds = fetchProductOfferAds();
+    _futureTrendingProduct = fetchTrendingProduct();
   }
   @override
   Widget build(BuildContext context) {
 
-    final pages = List.generate(
-      3,
-      (index) => Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              image: const DecorationImage(
-                  image: AssetImage('assess/images/Rectangle 48.png'),
-                  fit: BoxFit.cover)),
-          child: Stack(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '50-40% OFF',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Now in (product) \nAll colours',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      style: ButtonStyle(
-                        fixedSize: const WidgetStatePropertyAll(Size(190, 35)),
-                        backgroundColor:
-                            const WidgetStatePropertyAll(Colors.transparent),
-                        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: const BorderSide(color: Colors.white))),
-                      ),
-                      onPressed: () {},
-                      child: const Row(
-                        children: [
-                          Text(
-                            'Shop Now ',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontFamily: 'Montserrat',
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
-                          )
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
     return Scaffold(
         appBar: AppBar(
           title: Row(
@@ -299,35 +238,52 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(
                     height: 20,
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Column(
-                      children: <Widget>[
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: 200,
-                          child: PageView.builder(
-                            controller: _pageController,
-                            itemBuilder: (_, index) {
-                              return pages[index % pages.length];
-                            },
-                            itemCount: pages.length,
+                  FutureBuilder(
+                    future: _futureOfferAds,
+                    builder: (context,snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator(),);
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('faild to load offerAds '),);
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(
+                            child: Text('No product offerAds available'));
+                      } else {
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                        ),
-                        const SizedBox(height: 5),
-                        SmoothPageIndicator(
-                          controller: _pageController,
-                          count: pages.length,
-                          effect: WormEffect(
-                            dotHeight: 10,
-                            dotWidth: 10,
-                            activeDotColor: Colors.pink.shade200,
+                          child: Column(
+                            children: <Widget>[
+                              SizedBox(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 200,
+                                  child: CarouselSlider.builder(
+                                    itemCount: snapshot.data!.length,
+                                    itemBuilder: (context, index, realIndex) {
+                                      final offerAds = snapshot.data![index];
+                                      return offerAdsContainer(
+                                        image: NetworkImage(offerAds.image!),
+                                        content: offerAds.content!,
+                                        offer: offerAds.offer!,
+                                         onPress: () {  },
+                                      );
+                                    },
+                                    options: CarouselOptions(
+                                      autoPlay: true,
+                                      enlargeCenterPage: true,
+                                      viewportFraction: 1.0,
+                                      aspectRatio: 0.6,
+                                      initialPage: 0,
+                                    ),
+                                  ),
+                              ),
+                              const SizedBox(height: 5),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
+                        );
+                      }
+                    }
                   ),
                   offerContainer(
                       color: Colors.blueAccent,
@@ -382,26 +338,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                    }).toList(),
                                  ),
                                ),
-                               // Positioned(
-                               //   top: 200,
-                               //   left: 10,
-                               //   child: IconButton(
-                               //     onPressed: () {
-                               //       _carouselController.previousPage();
-                               //     },
-                               //     icon: Icon(Icons.arrow_back_ios),
-                               //   ),
-                               // ),
-                               // Positioned(
-                               //   top: 200,
-                               //   right: 10,
-                               //   child: IconButton(
-                               //     onPressed: () {
-                               //       _carouselController.nextPage();
-                               //     },
-                               //     icon: Icon(Icons.arrow_forward_ios),
-                               //   ),
-                               // ),
+                               Positioned(
+                                 top: 200,
+                                 left: 10,
+                                 child: IconButton(
+                                   onPressed: () {
+                                     _carouselController.previousPage();
+                                   },
+                                   icon: Icon(Icons.arrow_back_ios),
+                                 ),
+                               ),
+                               Positioned(
+                                 top: 200,
+                                 right: 10,
+                                 child: IconButton(
+                                   onPressed: () {
+                                     _carouselController.nextPage();
+                                   },
+                                   icon: Icon(Icons.arrow_forward_ios),
+                                 ),
+                               ),
                              ],
                            ),
                          ),
@@ -534,62 +490,65 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.calendar_month,
                       text2: '  Last Date 29/02/22   ',
                       Onpress: () {}),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Stack(children: [
-                      Row(
-                        children: [
-                          specialContainer(
-                              onPress: () {},
-                              image: const AssetImage(
-                                'assess/images/image 18 (1).png',
-                              ),
-                              pname: 'IWC Schaffhausen ',
-                              pdetail: "2021 Pilot's Watch 'SIHH 2019'44mm",
-                              price1: '₹650',
-                              price2: '₹1599',
-                              offer: '60%Off'),
-                          specialContainer(
-                              onPress: () {},
-                              image: const AssetImage(
-                                'assess/images/image 18.png',
-                              ),
-                              pname: 'Labbin White Sneakers',
-                              pdetail: ' For Men and Female',
-                              price1: '₹650',
-                              price2: '₹1250',
-                              offer: '70% off'),
-                          specialContainer(
-                              onPress: () {},
-                              image: const AssetImage(
-                                'assess/images/image 18(3).png',
-                              ),
-                              pname: "Mammon Women's ",
-                              pdetail: ' Handbag(Set of 3, Beige)',
-                              price1: '₹750',
-                              price2: '₹1999',
-                              offer: '70% off'),
-                        ],
-                      ),
-                      Positioned(
-                        bottom: 130,
-                        left: 320,
-                        child: TextButton(
-                          style: ButtonStyle(
-                              backgroundColor:
-                                  WidgetStatePropertyAll(Colors.grey[400]),
-                              fixedSize:
-                                  const WidgetStatePropertyAll(Size(40, 40)),
-                              shape: const WidgetStatePropertyAll(
-                                  CircleBorder(side: BorderSide(width: 80)))),
-                          onPressed: () {},
-                          child: const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.black,
+                  FutureBuilder(
+                    future:_futureTrendingProduct ,
+                    builder: (context,snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator(),);
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Faild to load Trends'),);
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(
+                            child: Text('No product Trends available'));
+                      } else {
+                        return Stack(children: [
+                          CarouselSlider(
+                            items: snapshot.data!.map((trending) {
+                                return Builder(
+                                  builder: (BuildContext context) {
+                                    return specialContainer(
+                                        onPress: () {},
+                                        image: NetworkImage(trending.image!),
+                                        pname: trending.name!,
+                                        price1:'\u{20B9} ${trending.price!}',
+                                        price2: '\u{20B9} ${trending.oldprice!}',
+                                        offer: trending.offer!
+                                    );
+                                  },
+                                );
+                              }).toList(),
+                            options: CarouselOptions(
+                              autoPlay: true,
+                              enlargeCenterPage: true,
+                              viewportFraction: 1.0,
+                              aspectRatio: 1.15,
+                              initialPage: 0,
+                            ),
+                            carouselController: _trendCarouselController,
                           ),
-                        ),
-                      )
-                    ]),
+                          Positioned(
+                            top: 200,
+                            left: 10,
+                            child: IconButton(
+                              onPressed: () {
+                                _trendCarouselController.previousPage();
+                              },
+                              icon: Icon(Icons.arrow_back_ios),
+                            ),
+                          ),
+                          Positioned(
+                            top: 200,
+                            right: 10,
+                            child: IconButton(
+                              onPressed: () {
+                                _trendCarouselController.nextPage();
+                              },
+                              icon: Icon(Icons.arrow_forward_ios),
+                            ),
+                          ),
+                        ]);
+                      }
+                    }
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -729,11 +688,91 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget offerAdsContainer({
+    required VoidCallback onPress,
+    required ImageProvider image,
+    required String offer,
+    required String content,
+}) => Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            image:  DecorationImage(
+                image:image,
+                fit: BoxFit.fill)),
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              top: 3,
+              left: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                     Text(
+                      offer,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 5),
+                     SizedBox(
+                       width: 150,
+                       child: Text(
+                        content,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontFamily: 'Montserrat',
+                        ),
+                                         ),
+                     ),
+                    SizedBox(height: 5),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                        fixedSize: const WidgetStatePropertyAll(Size(150, 40)),
+                        backgroundColor:
+                            const WidgetStatePropertyAll(Colors.transparent),
+                        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            side: const BorderSide(color: Colors.white))),
+                      ),
+                      onPressed: onPress,
+                      child:  Row(
+                        children: [
+                          Text(
+                            'Shop Now ',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
   Widget specialContainer({
     required VoidCallback onPress,
     required ImageProvider image,
     required String pname,
-    required String pdetail,
     required String price1,
     required String price2,
     required String offer,
@@ -756,22 +795,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 160,
                     width: 240,
                     decoration: BoxDecoration(
-                      image: DecorationImage(image: image, fit: BoxFit.cover),
+                      image: DecorationImage(image: image, fit: BoxFit.fill),
                     )),
                 Text(
                   pname,
                   style: const TextStyle(
-                      fontSize: 19,
+                      fontSize: 17,
                       color: Colors.black,
                       fontFamily: 'Montserrat',
                       fontWeight: FontWeight.w400),
                 ),
-                Text(pdetail,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                      fontFamily: 'Montserrat',
-                    )),
                 Text(
                   price1,
                   style: const TextStyle(

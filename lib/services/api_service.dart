@@ -1,7 +1,9 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:stylish_app/model/productoffer_ads_model.dart';
 import 'package:stylish_app/model/productoffer_model.dart';
+import 'package:stylish_app/model/trendingproduct_model.dart';
 import '../model/productmodel.dart';
 
 Future<List<productModel>> fetchTrendingProducts()  async {
@@ -20,7 +22,7 @@ Future<List<productModel>> fetchTrendingProducts()  async {
 }
 
 Future<List<ProductOfferModel>> fetchProductOffers()async{
-  final response = await http.get(Uri.parse('https://2249-117-222-165-212.ngrok-free.app/productoffer/viewoffer'));
+  final response = await http.get(Uri.parse('https://dec8-117-221-190-133.ngrok-free.app/productoffer/viewoffer'));
   if(response.statusCode == 200){
     Map<String,dynamic> jsonResponse = json.decode(response.body);
     List<dynamic> offerJson = jsonResponse['data'];
@@ -28,4 +30,25 @@ Future<List<ProductOfferModel>> fetchProductOffers()async{
   }else{
     throw Exception('Failed to load trending products');
   }
+}
+
+Future<List<ProductOfferAds>> fetchProductOfferAds()async{
+  final response = await http.get(Uri.parse('https://dec8-117-221-190-133.ngrok-free.app/offerads/viewoffer'));
+  if(response.statusCode ==200){
+    Map<String,dynamic> jsonResponse = json.decode(response.body);
+    List<dynamic> offerAds = jsonResponse['data'];
+    return offerAds.map((data)=>ProductOfferAds.fromJson(data)).toList();
+  }else{
+    throw Exception('Failed to load offerAds ');
+  }
+}
+ Future<List<TrendingProductModel>> fetchTrendingProduct()async{
+  final response = await http.get(Uri.parse('https://dec8-117-221-190-133.ngrok-free.app/trendingproduct/viewtrends'));
+ if(response.statusCode == 200){
+   Map<String,dynamic> jsonResponse = jsonDecode(response.body);
+   List<dynamic> trendingJson = jsonResponse['data'];
+   return trendingJson.map((data)=>TrendingProductModel.fromJson(data)).toList();
+ }else{
+   throw Exception('Failed to load Trending products');
+ }
 }

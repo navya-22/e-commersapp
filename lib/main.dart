@@ -29,7 +29,7 @@ void main() async {
     theme: ThemeData(
       primarySwatch: Colors.green,
     ),
-    home: HomeScreen(),
+    home: SignInScreen(),
     debugShowCheckedModeBanner: false,
   );
   }
